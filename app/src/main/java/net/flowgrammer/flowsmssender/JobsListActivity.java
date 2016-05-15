@@ -1,5 +1,6 @@
 package net.flowgrammer.flowsmssender;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -47,6 +48,8 @@ public class JobsListActivity extends AppCompatActivity {
                 if (result.equalsIgnoreCase("fail")) {
                     String message = response.optString("message");
                     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(JobsListActivity.this, LoginActivity.class);
+                    startActivity(intent);
                     return;
                 }
                 JSONArray list = response.optJSONArray("list");
