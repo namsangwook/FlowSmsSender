@@ -18,16 +18,29 @@ public class Setting {
         mSharedPreferences = mContext.getSharedPreferences(PREFS, mContext.MODE_PRIVATE);
     }
 
-    public String authKey() {
-//        SharedPreferences mSharedPreferences = mContext.getSharedPreferences(PREFS, mContext.MODE_PRIVATE);
-        String auth = mSharedPreferences.getString("auth_key", "");
+//    public String authKey() {
+////        SharedPreferences mSharedPreferences = mContext.getSharedPreferences(PREFS, mContext.MODE_PRIVATE);
+//        String auth = mSharedPreferences.getString("auth_key", "");
+//        return auth;
+//    }
+//
+//    public void setAuthKey(String authKey) {
+////        SharedPreferences mSharedPreferences = mContext.getSharedPreferences(PREFS, mContext.MODE_PRIVATE);
+//        SharedPreferences.Editor e = mSharedPreferences.edit();
+//        e.putString("auth_key", authKey);
+//        e.commit();
+//    }
+
+    public static String cookie(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);
+        String auth = sharedPreferences.getString("cookie", "");
         return auth;
     }
 
-    public void setAuthKey(String authKey) {
-//        SharedPreferences mSharedPreferences = mContext.getSharedPreferences(PREFS, mContext.MODE_PRIVATE);
-        SharedPreferences.Editor e = mSharedPreferences.edit();
-        e.putString("auth_key", authKey);
+    public static void setCookie(Context context, String cookie) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);
+        SharedPreferences.Editor e = sharedPreferences.edit();
+        e.putString("cookie", cookie);
         e.commit();
     }
 

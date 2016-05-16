@@ -1,5 +1,6 @@
 package net.flowgrammer.flowsmssender;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,8 +12,11 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
+import net.flowgrammer.flowsmssender.util.Util;
 
+import org.apache.http.Header;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,7 +25,7 @@ import org.json.JSONObject;
  */
 public class JobsListActivity extends AppCompatActivity {
 
-    private static final String QUERY_URL = "http://10.0.2.2:3003/api";
+//    private static final String QUERY_URL = "http://10.0.2.2:3003/api";
 
     Setting mSetting;
     @Override
@@ -35,13 +39,18 @@ public class JobsListActivity extends AppCompatActivity {
 
     private void loadJobsList() {
         AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
 
         RequestParams params = new RequestParams();
-        params.put("session", mSetting.authKey());
+//        params.put("session", mSetting.authKey());
 
-        client.post(QUERY_URL + "/jobs", params, new JsonHttpResponseHandler(){
+        client.get(Const.QUERY_URL + "/jobs", new JsonHttpResponseHandler(){
             @Override
-            public void onSuccess(JSONObject response) {
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                Util.saveCookie(getApplicationContext(), headers);
+//                onSuccess(statusCode, response);
+//            }
+//            public void onSuccess(JSONObject response) {
                 Log.d("TEST", "success");
 //                        Log.d("TEST", response.toString());
                 String result = response.optString("result");
@@ -49,7 +58,7 @@ public class JobsListActivity extends AppCompatActivity {
                     String message = response.optString("message");
                     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(JobsListActivity.this, LoginActivity.class);
-                    startActivity(intent);
+                    startActivityForResult(intent, 1);
                     return;
                 }
                 JSONArray list = response.optJSONArray("list");
@@ -68,5 +77,20 @@ public class JobsListActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            if(resultCode == Activity.RESULT_OK){
+                loadJobsList();
+//                String result=data.getStringExtra("result");
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                //Write your code if there's no result
+            }
+        }
+
     }
 }
