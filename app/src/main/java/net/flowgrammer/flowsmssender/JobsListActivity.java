@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
@@ -25,16 +27,14 @@ import org.json.JSONObject;
  */
 public class JobsListActivity extends AppCompatActivity {
 
-//    private static final String QUERY_URL = "http://10.0.2.2:3003/api";
+    private static final String LOG_TAG = JobsListActivity.class.getSimpleName();
 
-    Setting mSetting;
+//    Setting mSetting;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_jobs);
-        mSetting = new Setting(getApplicationContext());
         loadJobsList();
-
     }
 
     private void loadJobsList() {
@@ -92,5 +92,41 @@ public class JobsListActivity extends AppCompatActivity {
             }
         }
 
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_logout) {
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
+
+            RequestParams params = new RequestParams();
+//        params.put("session", mSetting.authKey());
+
+            client.get(Const.QUERY_URL + "/logout", new JsonHttpResponseHandler(){
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    Log.d(LOG_TAG, "logout");
+                    Setting.setCookie(getApplicationContext(), "");
+                    Toast.makeText(getApplicationContext(), "Logout Success", Toast.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
+                    super.onFailure(statusCode, e, errorResponse);
+                    Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+
+                }
+            });
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }

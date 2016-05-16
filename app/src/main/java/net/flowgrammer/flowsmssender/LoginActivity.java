@@ -28,13 +28,13 @@ public class LoginActivity extends AppCompatActivity {
     private static final String QUERY_URL = "http://10.0.2.2:3003/api";
 
 
-    Setting mSetting;
+//    Setting mSetting;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        mSetting = new Setting(this);
+//        mSetting = new Setting(this);
 
         Button loginButton = (Button)findViewById(R.id.login_button);
         loginButton.setOnClickListener(new View.OnClickListener() {
