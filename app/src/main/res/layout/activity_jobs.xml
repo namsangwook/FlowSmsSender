@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="net.flowgrammer.flowsmssender.JobsListActivity">
+    tools:context=".jobs.JobsListActivity">
 
     <ListView
         android:id="@+id/listview"

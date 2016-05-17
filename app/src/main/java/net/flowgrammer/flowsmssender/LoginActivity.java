@@ -1,7 +1,7 @@
 package net.flowgrammer.flowsmssender;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +15,7 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
 import net.flowgrammer.flowsmssender.util.Util;
 
@@ -25,16 +26,21 @@ import org.json.JSONObject;
  * Created by neox on 5/15/16.
  */
 public class LoginActivity extends AppCompatActivity {
-    private static final String QUERY_URL = "http://10.0.2.2:3003/api";
+    private static final String LOG_TAG = LoginActivity.class.getSimpleName() ;
 
+    ProgressDialog mDialog;
 
-//    Setting mSetting;
+    //    Setting mSetting;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
 //        mSetting = new Setting(this);
+
+        mDialog = new ProgressDialog(this);
+        mDialog.setMessage("Loading...");
+        mDialog.setCancelable(true);
 
         Button loginButton = (Button)findViewById(R.id.login_button);
         loginButton.setOnClickListener(new View.OnClickListener() {
@@ -46,8 +52,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void login() {
+        mDialog.show();
+
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
+        client.addHeader("Accept", "application/json");
 
         RequestParams params = new RequestParams();
 
@@ -55,16 +64,16 @@ public class LoginActivity extends AppCompatActivity {
         EditText password = (EditText)findViewById(R.id.password_text);
         params.put("username", username.getText().toString());
         params.put("password", password.getText().toString());
-
-        client.post(QUERY_URL + "/login", params,new JsonHttpResponseHandler(){
+        Log.e(LOG_TAG, "login");
+        client.post(Const.QUERY_URL + "/login", params,new JsonHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                mDialog.dismiss();
                 Util.saveCookie(getApplicationContext(), headers);
-//            public void onSuccess(JSONObject response) {
                 Log.d("TEST", "success");
                 Log.d("TEST", response.toString());
                 String result = response.optString("result");
-                String sessionId = response.optString("session_id");
+//                String sessionId = response.optString("session_id");
 //                mSetting.setAuthKey(sessionId);
                 if (result.equalsIgnoreCase("success")) {
 //                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
@@ -85,8 +94,9 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
+                mDialog.dismiss();
                 super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
             }
         });
     }

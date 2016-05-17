@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".JobsListActivity"
+            android:name=".jobs.JobsListActivity"
             android:label="JobsList">
 
         </activity>
@@ -27,9 +27,15 @@
         <activity
             android:name=".LoginActivity"
             android:label="Login"
-            android:launchMode="singleTop">
-
+            >
         </activity>
+
+        <activity
+            android:name=".jobdetail.JobDetailActivity"
+            android:label="Detail"
+            >
+        </activity>
+
     </application>
 
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>

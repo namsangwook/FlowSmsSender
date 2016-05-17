@@ -1,19 +1,25 @@
-package net.flowgrammer.flowsmssender;
+package net.flowgrammer.flowsmssender.jobs;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import net.flowgrammer.flowsmssender.LoginActivity;
+import net.flowgrammer.flowsmssender.MainActivity;
+import net.flowgrammer.flowsmssender.R;
+import net.flowgrammer.flowsmssender.jobdetail.JobDetailActivity;
 import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
 import net.flowgrammer.flowsmssender.util.Util;
@@ -29,49 +35,81 @@ public class JobsListActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = JobsListActivity.class.getSimpleName();
 
-//    Setting mSetting;
+    JobsAdapter mJobsAdapter;
+    Integer mTotalPage;
+    Integer mCurrentPage;
+    Integer mItemPerPage;
+
+    ProgressDialog mDialog;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_jobs);
+
+        mCurrentPage = 1;
+
+        ListView listView = (ListView)findViewById(R.id.listview);
+        mJobsAdapter = new JobsAdapter(this, getLayoutInflater());
+        listView.setAdapter(mJobsAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                JSONObject jsonObject = (JSONObject) mJobsAdapter.getItem(position);
+                String jobID = jsonObject.optString("_id","");
+                Intent detailIntent = new Intent(JobsListActivity.this, JobDetailActivity.class);
+                detailIntent.putExtra("jobID", jobID);
+                startActivity(detailIntent);
+            }
+        });
+
+        mDialog = new ProgressDialog(this);
+        mDialog.setMessage("Loading...");
+        mDialog.setCancelable(true);
+
         loadJobsList();
     }
 
     private void loadJobsList() {
+        mDialog.show();
+
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
+        client.addHeader("Accept", "application/json");
 
         RequestParams params = new RequestParams();
 //        params.put("session", mSetting.authKey());
 
-        client.get(Const.QUERY_URL + "/jobs", new JsonHttpResponseHandler(){
+        client.get(Const.QUERY_URL + "/jobs/page/" + mCurrentPage, new JsonHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                mDialog.dismiss();
                 Util.saveCookie(getApplicationContext(), headers);
-//                onSuccess(statusCode, response);
-//            }
-//            public void onSuccess(JSONObject response) {
-                Log.d("TEST", "success");
-//                        Log.d("TEST", response.toString());
+                Log.d(LOG_TAG, response.toString());
                 String result = response.optString("result");
-                if (result.equalsIgnoreCase("fail")) {
+                if (!result.equalsIgnoreCase("success")) {
                     String message = response.optString("message");
                     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(JobsListActivity.this, LoginActivity.class);
                     startActivityForResult(intent, 1);
                     return;
                 }
-                JSONArray list = response.optJSONArray("list");
-                Log.d("TEST", list.toString());
-                if (result.equalsIgnoreCase("success")) {
-                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
-                }
-//                        Log.d("TEST", response.toString());
-//                        super.onSuccess(response);
+                JSONArray list = response.optJSONArray("jobs");
+                mTotalPage = Integer.valueOf(response.optString("totalJobCount"));
+                mCurrentPage = Integer.valueOf(response.optString("currentPage"));
+                mItemPerPage = Integer.valueOf(response.optString("itemPerPage"));
+                Log.i(LOG_TAG, "totalPage : " + mTotalPage
+                        + ", currentPage : " + mCurrentPage
+                        + ", itemPerPage ; " + mItemPerPage);
+//                Log.d(LOG_TAG, list.toString());
+//                if (result.equalsIgnoreCase("success")) {
+//                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
+//                }
+                mJobsAdapter.updateData(list);
             }
 
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
+                mDialog.dismiss();
                 super.onFailure(statusCode, e, errorResponse);
                 Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
 
@@ -85,48 +123,10 @@ public class JobsListActivity extends AppCompatActivity {
         if (requestCode == 1) {
             if(resultCode == Activity.RESULT_OK){
                 loadJobsList();
-//                String result=data.getStringExtra("result");
             }
             if (resultCode == Activity.RESULT_CANCELED) {
-                //Write your code if there's no result
             }
         }
 
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_logout) {
-            AsyncHttpClient client = new AsyncHttpClient();
-            client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
-
-            RequestParams params = new RequestParams();
-//        params.put("session", mSetting.authKey());
-
-            client.get(Const.QUERY_URL + "/logout", new JsonHttpResponseHandler(){
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                    Log.d(LOG_TAG, "logout");
-                    Setting.setCookie(getApplicationContext(), "");
-                    Toast.makeText(getApplicationContext(), "Logout Success", Toast.LENGTH_LONG).show();
-                }
-
-                @Override
-                public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
-                    super.onFailure(statusCode, e, errorResponse);
-                    Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
-
-                }
-            });
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }
