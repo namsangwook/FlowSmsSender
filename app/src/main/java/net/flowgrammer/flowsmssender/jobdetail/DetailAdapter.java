@@ -11,6 +11,7 @@ import android.widget.TextView;
 import net.flowgrammer.flowsmssender.R;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -32,6 +33,18 @@ public class DetailAdapter extends BaseAdapter {
 
     public void updateData(JSONArray jsonArray) {
         mJsonArray = jsonArray;
+        notifyDataSetChanged();
+    }
+
+    public void updateStatus(int position, Integer status) {
+        JSONObject sms = (JSONObject)getItem(position);
+        try {
+            sms.put("status", status);
+            mJsonArray.put(position, sms);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Log.e(LOG_TAG, e.getMessage());
+        }
         notifyDataSetChanged();
     }
 

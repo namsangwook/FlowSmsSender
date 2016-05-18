@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -30,6 +31,7 @@ import com.loopj.android.http.RequestParams;
 import net.flowgrammer.flowsmssender.LoginActivity;
 import net.flowgrammer.flowsmssender.R;
 import net.flowgrammer.flowsmssender.jobs.JobsAdapter;
+import net.flowgrammer.flowsmssender.service.SmsIntentService;
 import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
 import net.flowgrammer.flowsmssender.util.Util;
@@ -47,7 +49,7 @@ import java.util.List;
 public class JobDetailActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = JobDetailActivity.class.getSimpleName();
-    public static final String ACTION_SMS_SENT = "net.flowgrammer.flowsmssender.SMS_SENT_ACTION";
+//    public static final String ACTION_SMS_SENT = "net.flowgrammer.flowsmssender.SMS_SENT_ACTION";
 
 
     Button mSendButton;
@@ -59,6 +61,16 @@ public class JobDetailActivity extends AppCompatActivity {
 
     ProgressDialog mDialog;
     Boolean isSendingSms;
+
+    JSONArray mSmsList;
+    Integer mJobIndex;
+
+//    BroadcastReceiver mReceiver;
+
+    Intent mSmsIntent;
+    ResponseReceiver mResponseReceiver;
+
+    private final Object lock = new Object();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -91,6 +103,9 @@ public class JobDetailActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                JSONObject jsonObject = (JSONObject) mDetailAdapter.getItem(position);
+                String smsID = jsonObject.optString("_id","");
+//                updateSmsStatus(position, smsID, "success");
             }
         });
 
@@ -110,57 +125,192 @@ public class JobDetailActivity extends AppCompatActivity {
             }
         });
 
-        registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String message = null;
-                boolean error = true;
-                Integer seq = intent.getIntExtra("seq", -1);
-                switch (getResultCode()) {
-                    case Activity.RESULT_OK:
-                        message = "Message sent!";
-                        error = false;
-                        break;
-                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                        message = "Error.";
-                        break;
-                    case SmsManager.RESULT_ERROR_NO_SERVICE:
-                        message = "Error: No service.";
-                        break;
-                    case SmsManager.RESULT_ERROR_NULL_PDU:
-                        message = "Error: Null PDU.";
-                        break;
-                    case SmsManager.RESULT_ERROR_RADIO_OFF:
-                        message = "Error: Radio off.";
-                        break;
-                }
+//        mReceiver = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                String message = null;
+//                boolean error = true;
+//                Integer seq = intent.getIntExtra("seq", -1);
+//                switch (getResultCode()) {
+//                    case Activity.RESULT_OK:
+//                        message = "Message sent!";
+//                        error = false;
+//                        break;
+//                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+//                        message = "Error.";
+//                        break;
+//                    case SmsManager.RESULT_ERROR_NO_SERVICE:
+//                        message = "Error: No service.";
+//                        break;
+//                    case SmsManager.RESULT_ERROR_NULL_PDU:
+//                        message = "Error: Null PDU.";
+//                        break;
+//                    case SmsManager.RESULT_ERROR_RADIO_OFF:
+//                        message = "Error: Radio off.";
+//                        break;
+//                }
+//            }
+//        };
+//        registerReceiver(mReceiver, new IntentFilter(ACTION_SMS_SENT));
 
 
-            }
-        }, new IntentFilter(ACTION_SMS_SENT));
+        IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        mResponseReceiver = new ResponseReceiver();
+        registerReceiver(mResponseReceiver, filter);
+
+//        mSmsIntent = new Intent(this, SmsIntentService.class);
+//        startService(mSmsIntent);
 
         loadJobDetail();
     }
 
+    public class ResponseReceiver extends BroadcastReceiver {
+        public static final String ACTION_RESP =
+                "net.flowgrammer.intent.action.MESSAGE_PROCESSED";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String result = intent.getStringExtra("result");
+            String message = intent.getStringExtra("message");
+            int seq = intent.getIntExtra("seq", -1);
+
+            String status = "fail";
+            if (result.equalsIgnoreCase("success")) {
+                status = "success";
+            }
+
+            Log.e(LOG_TAG, "ResponseReceiver onReceive : " +  result);
+
+            if (isSendingSms) {
+                JSONObject jsonObject = (JSONObject) mDetailAdapter.getItem(seq);
+                String smsID = jsonObject.optString("_id","");
+                updateSmsStatus(seq, mJobID, smsID, status);
+            }
+        }
+    }
+
+    private void updateSmsStatus(final int position, String jobID, String smsID, String status) {
+        mDialog.show();
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
+        client.addHeader("Accept", "application/json");
+
+        RequestParams params = new RequestParams();
+        params.put("status", status);
+
+        String requestUrl = Const.QUERY_URL + "/jobs/" + jobID + "/smslist/" + smsID +"?_method=PUT";
+
+        Log.e(LOG_TAG, "request url : " + requestUrl);
+
+        client.post(requestUrl, params, new JsonHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                mDialog.dismiss();
+                Util.saveCookie(getApplicationContext(), headers);
+                Log.d(LOG_TAG, response.toString());
+                String result = response.optString("result");
+                if (!result.equalsIgnoreCase("success")) {
+                    String message = response.optString("message");
+//                    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                } else {
+                    mDetailAdapter.updateStatus(position, 1);
+                }
+                if (isSendingSms) {
+                    synchronized (lock) {
+                        mJobIndex++;
+                    }
+                    sendNextSms();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
+                mDialog.dismiss();
+                super.onFailure(statusCode, e, errorResponse);
+                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                if (isSendingSms) {
+                    synchronized (lock) {
+                        mJobIndex++;
+                    }
+                    sendNextSms();
+                }
+
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mSmsIntent != null) {
+            stopService(mSmsIntent);
+        }
+
+        if (mResponseReceiver != null) {
+            unregisterReceiver(mResponseReceiver);
+        }
+
+        super.onDestroy();
+    }
+
     private void stopSmsSending() {
+        synchronized (lock) {
+            isSendingSms = false;
+        }
+    }
+
+    private void sendNextSms() {
+        JSONObject job = getNextSmsJob();
+        String name = job.optString("name");
+        String phonenumber = job.optString("phonenumber");
+        EditText editContent = (EditText)findViewById(R.id.edit_content);
+        String content = editContent.getText().toString();
+
+        mSmsIntent = new Intent(this, SmsIntentService.class);
+        mSmsIntent.putExtra("name", name);
+        mSmsIntent.putExtra("phonenumber", phonenumber);
+        mSmsIntent.putExtra("content", content);
+        mSmsIntent.putExtra("seq", mJobIndex);
+        startService(mSmsIntent);
     }
 
     private void startSmsSending() {
+        synchronized (lock) {
+            mJobIndex = 0;
+            isSendingSms = true;
+        }
+        sendNextSms();
     }
 
-    private void sendSms(String recipient, String smsBody, Integer seq) {
-//        String strSMSBody = "";
-        //sms recipient added by user from the activity screen
-//        String strReceipentsList = "01034567890";
-        SmsManager sms = SmsManager.getDefault();
-        List<String> messages = sms.divideMessage(smsBody);
-        for (String message : messages) {
-            Intent intent = new Intent(ACTION_SMS_SENT);
-            intent.putExtra("seq", seq);
-            sms.sendTextMessage(recipient, null, message, PendingIntent.getBroadcast(
-                    this, 0, intent, 0), null);
+    private synchronized JSONObject getNextSmsJob() {
+        Integer count = mSmsList.length();
+        for (int i = mJobIndex; i < count; i++) {
+            JSONObject job = mSmsList.optJSONObject(i);
+            Integer status = job.optInt("status");
+            if (status > 0) {
+                continue;
+            }
+            synchronized (lock) {
+                mJobIndex = i;
+            }
+            return job;
         }
+        return null;
     }
+
+//    private void sendSms(String recipient, String smsBody, Integer seq) {
+////        String strSMSBody = "";
+//        //sms recipient added by user from the activity screen
+////        String strReceipentsList = "01034567890";
+//        SmsManager sms = SmsManager.getDefault();
+//        List<String> messages = sms.divideMessage(smsBody);
+//        for (String message : messages) {
+//            Intent intent = new Intent(ACTION_SMS_SENT);
+//            intent.putExtra("seq", seq);
+//            sms.sendTextMessage(recipient, null, message, PendingIntent.getBroadcast(
+//                    this, 0, intent, 0), null);
+//        }
+//    }
 
     private void loadJobDetail() {
 
@@ -192,7 +342,7 @@ public class JobDetailActivity extends AppCompatActivity {
                     return;
                 }
                 JSONObject job = response.optJSONObject("job");
-                JSONArray smsList  = job.optJSONArray("smslist");
+                mSmsList  = job.optJSONArray("smslist");
                 JSONObject author = job.optJSONObject("author");
                 String created = job.optString("created");
                 String title = job.optString("name");
@@ -222,7 +372,55 @@ public class JobDetailActivity extends AppCompatActivity {
                 Log.e(LOG_TAG, "author : " + author.toString()
                                 + ", created : " + created
                                 + ", title ; " + title);
-                mDetailAdapter.updateData(smsList);
+                mDetailAdapter.updateData(mSmsList);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
+                mDialog.dismiss();
+                super.onFailure(statusCode, e, errorResponse);
+                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+
+            }
+        });
+    }
+
+    private void updateSmsStatus(final int position, String smsID, String status) {
+
+        mDialog.show();
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
+        client.addHeader("Accept", "application/json");
+
+        RequestParams params = new RequestParams();
+        params.put("status", status);
+
+        String requestUrl = Const.QUERY_URL + "/jobs/" + mJobID + "/smslist/" + smsID +"?_method=PUT";
+
+        Log.e(LOG_TAG, "request url : " + requestUrl);
+
+        client.post(requestUrl, params, new JsonHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                mDialog.dismiss();
+                Util.saveCookie(getApplicationContext(), headers);
+                Log.d(LOG_TAG, response.toString());
+                String result = response.optString("result");
+                if (!result.equalsIgnoreCase("success")) {
+                    String message = response.optString("message");
+                    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                mDetailAdapter.updateStatus(position, 1);
+//                JSONObject job = response.optJSONObject("job");
+//                mSmsList  = job.optJSONArray("smslist");
+//                JSONObject author = job.optJSONObject("author");
+//                String created = job.optString("created");
+//                String title = job.optString("name");
+//                String content = job.optString("description");
+//
+//                mDetailAdapter.updateData(mSmsList);
             }
 
             @Override
