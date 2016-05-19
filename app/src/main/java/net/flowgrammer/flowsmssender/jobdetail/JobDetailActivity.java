@@ -53,6 +53,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
 
     Button mSendButton;
+    ListView mListView;
     DetailAdapter mDetailAdapter;
     Integer mTotalPage;
     Integer mCurrentPage;
@@ -88,19 +89,11 @@ public class JobDetailActivity extends AppCompatActivity {
         mDialog.setCancelable(true);
 
         EditText editContent = (EditText)findViewById(R.id.edit_content);
-//        editContent.setEnabled(false);
-//        editContent.setInputType(InputType.TYPE_NULL);
-//        editContent.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                return true;
-//            }
-//        });
 
-        ListView listView = (ListView)findViewById(R.id.listview);
+        mListView = (ListView)findViewById(R.id.listview);
         mDetailAdapter = new DetailAdapter(this, getLayoutInflater());
-        listView.setAdapter(mDetailAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mListView.setAdapter(mDetailAdapter);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 JSONObject jsonObject = (JSONObject) mDetailAdapter.getItem(position);
@@ -125,44 +118,31 @@ public class JobDetailActivity extends AppCompatActivity {
             }
         });
 
-//        mReceiver = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                String message = null;
-//                boolean error = true;
-//                Integer seq = intent.getIntExtra("seq", -1);
-//                switch (getResultCode()) {
-//                    case Activity.RESULT_OK:
-//                        message = "Message sent!";
-//                        error = false;
-//                        break;
-//                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-//                        message = "Error.";
-//                        break;
-//                    case SmsManager.RESULT_ERROR_NO_SERVICE:
-//                        message = "Error: No service.";
-//                        break;
-//                    case SmsManager.RESULT_ERROR_NULL_PDU:
-//                        message = "Error: Null PDU.";
-//                        break;
-//                    case SmsManager.RESULT_ERROR_RADIO_OFF:
-//                        message = "Error: Radio off.";
-//                        break;
-//                }
-//            }
-//        };
-//        registerReceiver(mReceiver, new IntentFilter(ACTION_SMS_SENT));
-
-
         IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
         filter.addCategory(Intent.CATEGORY_DEFAULT);
         mResponseReceiver = new ResponseReceiver();
         registerReceiver(mResponseReceiver, filter);
 
-//        mSmsIntent = new Intent(this, SmsIntentService.class);
-//        startService(mSmsIntent);
-
         loadJobDetail();
+    }
+
+    /**
+     * Hides the soft keyboard
+     */
+    public void hideSoftKeyboard() {
+        if(getCurrentFocus()!=null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+    }
+
+    /**
+     * Shows the soft keyboard
+     */
+    public void showSoftKeyboard(View view) {
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        view.requestFocus();
+        inputMethodManager.showSoftInput(view, 0);
     }
 
     public class ResponseReceiver extends BroadcastReceiver {
@@ -180,18 +160,20 @@ public class JobDetailActivity extends AppCompatActivity {
                 status = "success";
             }
 
-            Log.e(LOG_TAG, "ResponseReceiver onReceive : " +  result);
+            Log.e(LOG_TAG, "ResponseReceiver onReceive : " +  result + ", seq : " + seq);
 
             if (isSendingSms) {
                 JSONObject jsonObject = (JSONObject) mDetailAdapter.getItem(seq);
                 String smsID = jsonObject.optString("_id","");
+                mDetailAdapter.setSelectedItem(seq);
                 updateSmsStatus(seq, mJobID, smsID, status);
+                mListView.smoothScrollToPosition(seq);
             }
         }
     }
 
-    private void updateSmsStatus(final int position, String jobID, String smsID, String status) {
-        mDialog.show();
+    private void updateSmsStatus(final int position, String jobID, String smsID, final String status) {
+//        mDialog.show();
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
@@ -206,7 +188,7 @@ public class JobDetailActivity extends AppCompatActivity {
         client.post(requestUrl, params, new JsonHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                mDialog.dismiss();
+//                mDialog.dismiss();
                 Util.saveCookie(getApplicationContext(), headers);
                 Log.d(LOG_TAG, response.toString());
                 String result = response.optString("result");
@@ -214,7 +196,11 @@ public class JobDetailActivity extends AppCompatActivity {
                     String message = response.optString("message");
 //                    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
                 } else {
-                    mDetailAdapter.updateStatus(position, 1);
+                    if (status.equalsIgnoreCase("success")) {
+                        mDetailAdapter.updateStatus(position, 1);
+                    } else {
+                        mDetailAdapter.updateStatus(position, -1);
+                    }
                 }
                 if (isSendingSms) {
                     synchronized (lock) {
@@ -226,7 +212,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
-                mDialog.dismiss();
+//                mDialog.dismiss();
                 super.onFailure(statusCode, e, errorResponse);
                 Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
                 if (isSendingSms) {
@@ -261,6 +247,14 @@ public class JobDetailActivity extends AppCompatActivity {
 
     private void sendNextSms() {
         JSONObject job = getNextSmsJob();
+        if (job == null) {
+            synchronized (lock) {
+                isSendingSms = false;
+                mSendButton.setText("Start");
+                Toast.makeText(getApplicationContext(), "Sms Sending End!!!", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
         String name = job.optString("name");
         String phonenumber = job.optString("phonenumber");
         EditText editContent = (EditText)findViewById(R.id.edit_content);
@@ -331,6 +325,13 @@ public class JobDetailActivity extends AppCompatActivity {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 mDialog.dismiss();
+                mListView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        hideSoftKeyboard();
+                    }
+                }, 300);
+
                 Util.saveCookie(getApplicationContext(), headers);
                 Log.d(LOG_TAG, response.toString());
                 String result = response.optString("result");
@@ -378,6 +379,13 @@ public class JobDetailActivity extends AppCompatActivity {
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
+                mListView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        hideSoftKeyboard();
+                    }
+                }, 300);
+
                 super.onFailure(statusCode, e, errorResponse);
                 Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
 

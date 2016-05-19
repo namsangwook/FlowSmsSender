@@ -1,6 +1,7 @@
 package net.flowgrammer.flowsmssender.jobdetail;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +25,7 @@ public class DetailAdapter extends BaseAdapter {
     Context mContext;
     LayoutInflater mInflater;
     JSONArray mJsonArray;
+    int selectedItem = -1;
 
     public DetailAdapter(Context context, LayoutInflater inflater) {
         mContext = context;
@@ -47,6 +49,8 @@ public class DetailAdapter extends BaseAdapter {
         }
         notifyDataSetChanged();
     }
+
+
 
     @Override
     public int getCount() {
@@ -86,6 +90,12 @@ public class DetailAdapter extends BaseAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
+        if (selectedItem == position) {
+            convertView.setBackgroundColor(Color.CYAN);
+        } else {
+            convertView.setBackgroundColor(Color.TRANSPARENT);
+        }
+
         JSONObject jsonObject = (JSONObject) getItem(position);
 
         String name = jsonObject.optString("name");
@@ -106,6 +116,10 @@ public class DetailAdapter extends BaseAdapter {
 
         convertView.setMinimumHeight(75);
         return convertView;
+    }
+
+    public void setSelectedItem(int seq) {
+        selectedItem = seq;
     }
 
     private static class ViewHolder {

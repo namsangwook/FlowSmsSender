@@ -34,6 +34,8 @@ public class SmsIntentService extends IntentService {
     public static final String ACTION_SMS_SENT = "net.flowgrammer.flowsmssender.SMS_SENT_ACTION";
 
 
+    int mCurrentSeq = -1;
+
     BroadcastReceiver mReceiver;
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -78,13 +80,16 @@ public class SmsIntentService extends IntentService {
             public void onReceive(Context context, Intent intent) {
                 String message = "unknown";
                 Integer seq = intent.getIntExtra("seq", -1);
+                Log.e(LOG_TAG, "broadcast receive, seq : " + seq);
+                Log.e(LOG_TAG, "broadcast receive, current seq : " + mCurrentSeq);
                 Intent broadcastIntent = new Intent();
                 broadcastIntent.setAction("net.flowgrammer.intent.action.MESSAGE_PROCESSED");
                 switch (getResultCode()) {
                     case Activity.RESULT_OK:
                         message = "Message sent!";
+                        Log.e(LOG_TAG, "send sms success");
                         broadcastIntent.putExtra("result", "success");
-                        broadcastIntent.putExtra("seq", seq);
+                        broadcastIntent.putExtra("seq", mCurrentSeq);
                         getBaseContext().sendBroadcast(broadcastIntent);
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
@@ -96,9 +101,11 @@ public class SmsIntentService extends IntentService {
                     case SmsManager.RESULT_ERROR_RADIO_OFF:
                         message = "Error: Radio off.";
                     default:
+                        Log.e(LOG_TAG, "send sms fail, reason : " + message);
+
                         broadcastIntent.putExtra("result", "fail");
                         broadcastIntent.putExtra("message", message);
-                        broadcastIntent.putExtra("seq", seq);
+                        broadcastIntent.putExtra("seq", mCurrentSeq);
                         getBaseContext().sendBroadcast(broadcastIntent);
                         break;
                 }
@@ -143,6 +150,7 @@ public class SmsIntentService extends IntentService {
         for (String message : messages) {
             Intent intent = new Intent(ACTION_SMS_SENT);
             intent.putExtra("seq", seq);
+            mCurrentSeq = seq;
             sms.sendTextMessage(recipient, null, message, PendingIntent.getBroadcast(
                     this, 0, intent, 0), null);
         }
