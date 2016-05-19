@@ -120,6 +120,7 @@ public class DetailAdapter extends BaseAdapter {
 
     public void setSelectedItem(int seq) {
         selectedItem = seq;
+        notifyDataSetChanged();
     }
 
     private static class ViewHolder {

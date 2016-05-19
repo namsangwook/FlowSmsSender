@@ -165,7 +165,6 @@ public class JobDetailActivity extends AppCompatActivity {
             if (isSendingSms) {
                 JSONObject jsonObject = (JSONObject) mDetailAdapter.getItem(seq);
                 String smsID = jsonObject.optString("_id","");
-                mDetailAdapter.setSelectedItem(seq);
                 updateSmsStatus(seq, mJobID, smsID, status);
                 mListView.smoothScrollToPosition(seq);
             }
@@ -255,6 +254,8 @@ public class JobDetailActivity extends AppCompatActivity {
             }
             return;
         }
+        mDetailAdapter.setSelectedItem(mJobIndex);
+
         String name = job.optString("name");
         String phonenumber = job.optString("phonenumber");
         EditText editContent = (EditText)findViewById(R.id.edit_content);
