@@ -168,7 +168,12 @@ public class JobDetailActivity extends AppCompatActivity {
                 JSONObject jsonObject = (JSONObject) mDetailAdapter.getItem(seq);
                 String smsID = jsonObject.optString("_id","");
                 updateSmsStatus(seq, mJobID, smsID, status);
-                mListView.smoothScrollToPosition(seq);
+                int count = mDetailAdapter.getCount();
+                int scrollPosition = seq + 3;
+                if (scrollPosition >= count) {
+                    scrollPosition = count - 1;
+                }
+                mListView.smoothScrollToPosition(scrollPosition);
             }
         }
     }
@@ -253,6 +258,8 @@ public class JobDetailActivity extends AppCompatActivity {
             synchronized (lock) {
                 isSendingSms = false;
                 mSendButton.setText("Start");
+                mDetailAdapter.setSelectedItem(-1);
+                mListView.smoothScrollToPosition(0);
                 Toast.makeText(getApplicationContext(), "Sms Sending End!!!", Toast.LENGTH_LONG).show();
             }
             return;
@@ -367,10 +374,10 @@ public class JobDetailActivity extends AppCompatActivity {
                     }
                 }, 300);
 
-                super.onFailure(statusCode, e, errorResponse);
+//                super.onFailure(statusCode, e, errorResponse);
                 Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
-
             }
+
         });
     }
 
@@ -408,7 +415,7 @@ public class JobDetailActivity extends AppCompatActivity {
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
-                super.onFailure(statusCode, e, errorResponse);
+//                super.onFailure(statusCode, e, errorResponse);
                 Toast.makeText(getApplicationContext(), errorResponse == null ? "sms sending stopped" : errorResponse.toString(), Toast.LENGTH_LONG).show();
                 stopSmsSending();
             }

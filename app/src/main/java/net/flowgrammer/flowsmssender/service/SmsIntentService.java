@@ -12,17 +12,6 @@ import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.JsonHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-
-import net.flowgrammer.flowsmssender.util.Const;
-import net.flowgrammer.flowsmssender.util.Setting;
-import net.flowgrammer.flowsmssender.util.Util;
-
-import org.apache.http.Header;
-import org.json.JSONObject;
-
 import java.util.List;
 
 /**
@@ -32,16 +21,13 @@ public class SmsIntentService extends IntentService {
 
     private static final String LOG_TAG = SmsIntentService.class.getSimpleName();
     public static final String ACTION_SMS_SENT = "net.flowgrammer.flowsmssender.SMS_SENT_ACTION";
-
+    public static final String ACTION_SMS_DELIVERED = "net.flowgrammer.flowsmssender.SMS_DELIVERED_ACTION";
 
     int mCurrentSeq = -1;
 
     BroadcastReceiver mReceiver;
-    /**
-     * Creates an IntentService.  Invoked by your subclass's constructor.
-     *
-     * @param name Used to name the worker thread, important only for debugging.
-     */
+    BroadcastReceiver mDeliveredReceiver;
+
     public SmsIntentService() {
         super(SmsIntentService.class.getSimpleName());
     }
@@ -82,10 +68,10 @@ public class SmsIntentService extends IntentService {
                     case Activity.RESULT_OK:
                         message = "Message sent!";
                         Log.e(LOG_TAG, "send sms success");
-                        broadcastIntent.putExtra("result", "success");
-                        broadcastIntent.putExtra("message", message);
-                        broadcastIntent.putExtra("seq", mCurrentSeq);
-                        getBaseContext().sendBroadcast(broadcastIntent);
+//                        broadcastIntent.putExtra("result", "success");
+//                        broadcastIntent.putExtra("message", message);
+//                        broadcastIntent.putExtra("seq", mCurrentSeq);
+//                        getBaseContext().sendBroadcast(broadcastIntent);
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
                         message = "Error.";
@@ -107,12 +93,47 @@ public class SmsIntentService extends IntentService {
             }
         };
         registerReceiver(mReceiver, new IntentFilter(ACTION_SMS_SENT));
+
+
+        mDeliveredReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent broadcastIntent) {
+                switch (getResultCode()) {
+
+                    case Activity.RESULT_OK: {
+                        String message = "Message sent!";
+//                        Toast.makeText(getBaseContext(), "SMS delivered",
+//                                Toast.LENGTH_SHORT).show();
+                        broadcastIntent.putExtra("result", "success");
+                        broadcastIntent.putExtra("message", message);
+                        broadcastIntent.putExtra("seq", mCurrentSeq);
+                        getBaseContext().sendBroadcast(broadcastIntent);
+                        break;
+                    }
+                    case Activity.RESULT_CANCELED: {
+                        Log.e(LOG_TAG, "delivered intent : canceled");
+                        String message = "Message canceled!";
+//                        Toast.makeText(getBaseContext(), "SMS not delivered",
+//                                Toast.LENGTH_SHORT).show();
+                        broadcastIntent.putExtra("result", "fail");
+                        broadcastIntent.putExtra("message", message);
+                        broadcastIntent.putExtra("seq", mCurrentSeq);
+                        getBaseContext().sendBroadcast(broadcastIntent);
+                        break;
+                    }
+                }
+            }
+        };
+        registerReceiver(mDeliveredReceiver, new IntentFilter(ACTION_SMS_DELIVERED));
     }
 
     @Override
     public void onDestroy() {
         if (mReceiver != null) {
             unregisterReceiver(mReceiver);
+        }
+        if (mDeliveredReceiver != null) {
+            unregisterReceiver(mDeliveredReceiver);
         }
         super.onDestroy();
 //        Log.e(LOG_TAG, "service onDestroy");
@@ -126,13 +147,49 @@ public class SmsIntentService extends IntentService {
 
     private void sendSms(String recipient, String smsBody, Integer seq) {
         SmsManager sms = SmsManager.getDefault();
+        int displaySeq = seq + 1;
+        smsBody += "\nseq : " + displaySeq;
         List<String> messages = sms.divideMessage(smsBody);
+
+        int messageCount = messages.size();
+        Log.e(LOG_TAG, "Message Count: " + messageCount);
+
+//        ArrayList<PendingIntent> deliveryIntents = new ArrayList<PendingIntent>();
+//        ArrayList<PendingIntent> sentIntents = new ArrayList<PendingIntent>();
+//
+//        PendingIntent sentPI = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_SMS_SENT), 0);
+//        PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_SMS_DELIVERED), 0);
+//
+//        for (int j = 0; j < messageCount; j++) {
+//            sentIntents.add(sentPI);
+//            deliveryIntents.add(deliveredPI);
+//        }
+        mCurrentSeq = seq;
+//        sms.sendTextMessage(recipient, null, smsBody, sentPI, deliveredPI);
         for (String message : messages) {
-            Intent intent = new Intent(ACTION_SMS_SENT);
-            intent.putExtra("seq", seq);
+//            Intent intent = new Intent(ACTION_SMS_SENT);
+//            intent.putExtra("seq", seq);
+            Log.e(LOG_TAG, "Send Message : " + message);
             mCurrentSeq = seq;
-            sms.sendTextMessage(recipient, null, message, PendingIntent.getBroadcast(
-                    this, 0, intent, 0), null);
+//            PendingIntent sentPI = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_SMS_SENT), 0);
+//            PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_SMS_DELIVERED), 0);
+//
+//            sms.sendTextMessage(recipient, null, message, sentPI, deliveredPI);
+            sms.sendTextMessage(recipient, null, message, null, null); // 일단 시간텀을 두고 sms 를 보내자
+
+            try {
+                Thread.sleep(3 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+
+        Intent broadcastIntent = new Intent();
+        broadcastIntent.setAction("net.flowgrammer.intent.action.MESSAGE_PROCESSED");
+
+        broadcastIntent.putExtra("result", "success");
+        broadcastIntent.putExtra("message", "success");
+        broadcastIntent.putExtra("seq", mCurrentSeq);
+        getBaseContext().sendBroadcast(broadcastIntent);
     }
 }
