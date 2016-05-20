@@ -147,8 +147,8 @@ public class SmsIntentService extends IntentService {
 
     private void sendSms(String recipient, String smsBody, Integer seq) {
         SmsManager sms = SmsManager.getDefault();
-        int displaySeq = seq + 1;
-        smsBody += "\nseq : " + displaySeq;
+//        int displaySeq = seq + 1;
+//        smsBody += "\nseq : " + displaySeq;
         List<String> messages = sms.divideMessage(smsBody);
 
         int messageCount = messages.size();
