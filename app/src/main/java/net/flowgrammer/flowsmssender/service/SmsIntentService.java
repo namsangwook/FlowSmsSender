@@ -56,24 +56,18 @@ public class SmsIntentService extends IntentService {
                 + ", content : " + content + ", seq : " + seq);
 
         sendSms(phonenumber, content, seq);
-
-//            Thread.sleep(5 * 1000);
-//            Intent broadcastIntent = new Intent();
-//            broadcastIntent.setAction("net.flowgrammer.intent.action.MESSAGE_PROCESSED");
-//            broadcastIntent.putExtra("message", "Hello, BroadCast!");
-//            getBaseContext().sendBroadcast(broadcastIntent);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.e(LOG_TAG, "service onBind");
+//        Log.e(LOG_TAG, "service onBind");
         return super.onBind(intent);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.e(LOG_TAG, "service onCreate");
+//        Log.e(LOG_TAG, "service onCreate");
 
         mReceiver = new BroadcastReceiver() {
             @Override
@@ -120,31 +114,16 @@ public class SmsIntentService extends IntentService {
             unregisterReceiver(mReceiver);
         }
         super.onDestroy();
-        Log.e(LOG_TAG, "service onDestroy");
+//        Log.e(LOG_TAG, "service onDestroy");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e(LOG_TAG, "service onStartCommand");
+//        Log.e(LOG_TAG, "service onStartCommand");
         return super.onStartCommand(intent, flags, startId);
     }
 
     private void sendSms(String recipient, String smsBody, Integer seq) {
-//        String strSMSBody = "";
-        //sms recipient added by user from the activity screen
-//        String strReceipentsList = "01034567890";
-//        try {
-//            Thread.sleep(5 * 1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        Intent broadcastIntent = new Intent();
-//        broadcastIntent.setAction("net.flowgrammer.intent.action.MESSAGE_PROCESSED");
-//        broadcastIntent.putExtra("message", "Hello, BroadCast!");
-//        getBaseContext().sendBroadcast(broadcastIntent);
-
-
-
         SmsManager sms = SmsManager.getDefault();
         List<String> messages = sms.divideMessage(smsBody);
         for (String message : messages) {

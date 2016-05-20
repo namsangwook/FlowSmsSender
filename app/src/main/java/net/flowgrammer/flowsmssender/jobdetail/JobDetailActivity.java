@@ -107,12 +107,14 @@ public class JobDetailActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (!isSendingSms) {
-                    isSendingSms = true;
-                    mSendButton.setText("Stop");
+                    mListView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            hideSoftKeyboard();
+                        }
+                    });
                     startSmsSending();
                 } else {
-                    isSendingSms = false;
-                    mSendButton.setText("Start");
                     stopSmsSending();
                 }
             }
@@ -242,6 +244,7 @@ public class JobDetailActivity extends AppCompatActivity {
         synchronized (lock) {
             isSendingSms = false;
         }
+        mSendButton.setText("Start");
     }
 
     private void sendNextSms() {
@@ -274,6 +277,7 @@ public class JobDetailActivity extends AppCompatActivity {
             mJobIndex = 0;
             isSendingSms = true;
         }
+        mSendButton.setText("Stop");
         sendNextSms();
     }
 
@@ -292,20 +296,6 @@ public class JobDetailActivity extends AppCompatActivity {
         }
         return null;
     }
-
-//    private void sendSms(String recipient, String smsBody, Integer seq) {
-////        String strSMSBody = "";
-//        //sms recipient added by user from the activity screen
-////        String strReceipentsList = "01034567890";
-//        SmsManager sms = SmsManager.getDefault();
-//        List<String> messages = sms.divideMessage(smsBody);
-//        for (String message : messages) {
-//            Intent intent = new Intent(ACTION_SMS_SENT);
-//            intent.putExtra("seq", seq);
-//            sms.sendTextMessage(recipient, null, message, PendingIntent.getBroadcast(
-//                    this, 0, intent, 0), null);
-//        }
-//    }
 
     private void loadJobDetail() {
 
@@ -361,16 +351,6 @@ public class JobDetailActivity extends AppCompatActivity {
                     imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 }
 
-//                mTotalPage = Integer.valueOf(response.optString("totalJobCount"));
-//                mCurrentPage = Integer.valueOf(response.optString("currentPage"));
-//                mItemPerPage = Integer.valueOf(response.optString("itemPerPage"));
-//                Log.i(LOG_TAG, "totalPage : " + mTotalPage
-//                        + ", currentPage : " + mCurrentPage
-//                        + ", itemPerPage ; " + mItemPerPage);
-
-//                content = content.replace("\\r", "\r");
-//                content = content.replace("\\n", "\n");
-
                 Log.e(LOG_TAG, "author : " + author.toString()
                                 + ", created : " + created
                                 + ", title ; " + title);
@@ -419,25 +399,18 @@ public class JobDetailActivity extends AppCompatActivity {
                 if (!result.equalsIgnoreCase("success")) {
                     String message = response.optString("message");
                     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                    stopSmsSending();
                     return;
                 }
                 mDetailAdapter.updateStatus(position, 1);
-//                JSONObject job = response.optJSONObject("job");
-//                mSmsList  = job.optJSONArray("smslist");
-//                JSONObject author = job.optJSONObject("author");
-//                String created = job.optString("created");
-//                String title = job.optString("name");
-//                String content = job.optString("description");
-//
-//                mDetailAdapter.updateData(mSmsList);
             }
 
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
                 super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
-
+                Toast.makeText(getApplicationContext(), errorResponse == null ? "sms sending stopped" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                stopSmsSending();
             }
         });
     }

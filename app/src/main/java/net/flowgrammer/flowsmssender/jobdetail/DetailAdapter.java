@@ -91,7 +91,7 @@ public class DetailAdapter extends BaseAdapter {
         }
 
         if (selectedItem == position) {
-            convertView.setBackgroundColor(Color.CYAN);
+            convertView.setBackgroundColor(Color.GRAY);
         } else {
             convertView.setBackgroundColor(Color.TRANSPARENT);
         }
