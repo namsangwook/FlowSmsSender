@@ -83,6 +83,7 @@ public class SmsIntentService extends IntentService {
                         message = "Message sent!";
                         Log.e(LOG_TAG, "send sms success");
                         broadcastIntent.putExtra("result", "success");
+                        broadcastIntent.putExtra("message", message);
                         broadcastIntent.putExtra("seq", mCurrentSeq);
                         getBaseContext().sendBroadcast(broadcastIntent);
                         break;
