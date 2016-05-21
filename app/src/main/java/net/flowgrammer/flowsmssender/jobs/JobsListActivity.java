@@ -21,12 +21,22 @@ import net.flowgrammer.flowsmssender.MainActivity;
 import net.flowgrammer.flowsmssender.R;
 import net.flowgrammer.flowsmssender.jobdetail.JobDetailActivity;
 import net.flowgrammer.flowsmssender.util.Const;
+import net.flowgrammer.flowsmssender.util.MySSLSocketFactory;
 import net.flowgrammer.flowsmssender.util.Setting;
+import net.flowgrammer.flowsmssender.util.SslAsyncHttpClient;
 import net.flowgrammer.flowsmssender.util.Util;
 
 import org.apache.http.Header;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 /**
  * Created by neox on 5/15/16.
@@ -72,7 +82,30 @@ public class JobsListActivity extends AppCompatActivity {
     private void loadJobsList() {
         mDialog.show();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new SslAsyncHttpClient();
+
+//        KeyStore trustStore = null;
+//        MySSLSocketFactory sf = null;
+//        try {
+//            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+//            trustStore.load(null, null);
+//            sf = new MySSLSocketFactory(trustStore);
+//            sf.setHostnameVerifier(MySSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+//        } catch (KeyStoreException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } catch (CertificateException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (UnrecoverableKeyException e) {
+//            e.printStackTrace();
+//        } catch (KeyManagementException e) {
+//            e.printStackTrace();
+//        }
+//        client.setSSLSocketFactory(sf);
+
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
 
@@ -111,7 +144,8 @@ public class JobsListActivity extends AppCompatActivity {
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
 //                super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                finish();
 
             }
         });

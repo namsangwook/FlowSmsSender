@@ -34,6 +34,7 @@ import net.flowgrammer.flowsmssender.jobs.JobsAdapter;
 import net.flowgrammer.flowsmssender.service.SmsIntentService;
 import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
+import net.flowgrammer.flowsmssender.util.SslAsyncHttpClient;
 import net.flowgrammer.flowsmssender.util.Util;
 
 import org.apache.http.Header;
@@ -180,7 +181,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
     private void updateSmsStatus(final int position, String jobID, String smsID, final String status) {
 //        mDialog.show();
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new SslAsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
 
@@ -220,7 +221,7 @@ public class JobDetailActivity extends AppCompatActivity {
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
 //                mDialog.dismiss();
                 super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
                 if (isSendingSms) {
                     synchronized (lock) {
                         mJobIndex++;
@@ -308,7 +309,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
         mDialog.show();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new SslAsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
 
@@ -375,7 +376,7 @@ public class JobDetailActivity extends AppCompatActivity {
                 }, 300);
 
 //                super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
             }
 
         });
@@ -385,7 +386,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
         mDialog.show();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new SslAsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
 
@@ -416,7 +417,7 @@ public class JobDetailActivity extends AppCompatActivity {
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
 //                super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse == null ? "sms sending stopped" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
                 stopSmsSending();
             }
         });

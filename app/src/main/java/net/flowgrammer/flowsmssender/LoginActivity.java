@@ -17,6 +17,7 @@ import com.loopj.android.http.RequestParams;
 
 import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
+import net.flowgrammer.flowsmssender.util.SslAsyncHttpClient;
 import net.flowgrammer.flowsmssender.util.Util;
 
 import org.apache.http.Header;
@@ -54,7 +55,7 @@ public class LoginActivity extends AppCompatActivity {
     private void login() {
         mDialog.show();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new SslAsyncHttpClient();
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
 
@@ -96,7 +97,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
                 super.onFailure(statusCode, e, errorResponse);
-                Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
