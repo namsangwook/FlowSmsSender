@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -46,7 +47,8 @@ public class JobsListActivity extends AppCompatActivity {
     private static final String LOG_TAG = JobsListActivity.class.getSimpleName();
 
     JobsAdapter mJobsAdapter;
-    Integer mTotalPage;
+    Integer mTotalPage = 1;
+    Integer mTotalCount = 0;
     Integer mCurrentPage;
     Integer mItemPerPage;
 
@@ -56,7 +58,7 @@ public class JobsListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_jobs);
 
-        mCurrentPage = 1;
+        mCurrentPage = 0;
 
         ListView listView = (ListView)findViewById(R.id.listview);
         mJobsAdapter = new JobsAdapter(this, getLayoutInflater());
@@ -72,6 +74,7 @@ public class JobsListActivity extends AppCompatActivity {
             }
         });
 
+        listView.setOnScrollListener(new EndlessScrollListener());
         mDialog = new ProgressDialog(this);
         mDialog.setMessage("Loading...");
         mDialog.setCancelable(true);
@@ -80,39 +83,28 @@ public class JobsListActivity extends AppCompatActivity {
     }
 
     private void loadJobsList() {
+
+        if (mCurrentPage >= mTotalPage) {
+            Log.e(LOG_TAG, "no more page to return, return!!!!");
+            return;
+        }
+
+        mCurrentPage++;
+
         mDialog.show();
 
         AsyncHttpClient client = new SslAsyncHttpClient();
-
-//        KeyStore trustStore = null;
-//        MySSLSocketFactory sf = null;
-//        try {
-//            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-//            trustStore.load(null, null);
-//            sf = new MySSLSocketFactory(trustStore);
-//            sf.setHostnameVerifier(MySSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-//        } catch (KeyStoreException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (CertificateException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (UnrecoverableKeyException e) {
-//            e.printStackTrace();
-//        } catch (KeyManagementException e) {
-//            e.printStackTrace();
-//        }
-//        client.setSSLSocketFactory(sf);
-
         client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
         client.addHeader("Accept", "application/json");
 
         RequestParams params = new RequestParams();
 //        params.put("session", mSetting.authKey());
 
-        client.get(Const.QUERY_URL + "/jobs/page/" + mCurrentPage, new JsonHttpResponseHandler(){
+        String requestUrl = Const.QUERY_URL + "/jobs/page/" + mCurrentPage;
+
+        Log.e(LOG_TAG, requestUrl);
+
+        client.get(requestUrl, new JsonHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 mDialog.dismiss();
@@ -127,12 +119,15 @@ public class JobsListActivity extends AppCompatActivity {
                     return;
                 }
                 JSONArray list = response.optJSONArray("jobs");
-                mTotalPage = Integer.valueOf(response.optString("totalJobCount"));
+                mTotalCount = Integer.valueOf(response.optString("totalJobCount"));
                 mCurrentPage = Integer.valueOf(response.optString("currentPage"));
                 mItemPerPage = Integer.valueOf(response.optString("itemPerPage"));
-                Log.i(LOG_TAG, "totalPage : " + mTotalPage
+                mTotalPage = mTotalCount / mItemPerPage + ((mTotalCount % mItemPerPage) > 0 ? 1 : 0);
+                Log.i(LOG_TAG, "totalCount : " + mTotalCount
                         + ", currentPage : " + mCurrentPage
-                        + ", itemPerPage ; " + mItemPerPage);
+                        + ", itemPerPage ; " + mItemPerPage
+                        + ", totalPage ; " + mTotalPage
+                );
 //                Log.d(LOG_TAG, list.toString());
 //                if (result.equalsIgnoreCase("success")) {
 //                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
@@ -162,5 +157,48 @@ public class JobsListActivity extends AppCompatActivity {
             }
         }
 
+    }
+
+    private class EndlessScrollListener implements AbsListView.OnScrollListener {
+
+        private int visibleThreshold = 5;
+        private int currentPage = 0;
+        private int previousTotal = 0;
+        private boolean loading = true;
+
+        public EndlessScrollListener() {
+        }
+        public EndlessScrollListener(int visibleThreshold) {
+            this.visibleThreshold = visibleThreshold;
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem,
+                             int visibleItemCount, int totalItemCount) {
+            if (totalItemCount >= mTotalCount) {
+                return;
+            }
+
+            boolean loadMore = /* maybe add a padding */
+                    firstVisibleItem + visibleItemCount >= totalItemCount;
+
+            if (loading) {
+                if (totalItemCount > previousTotal) {
+                    loading = false;
+                    previousTotal = totalItemCount;
+//                    currentPage++;
+                }
+            }
+            if (!loading && loadMore) {
+                // I load the next page of gigs using a background task,
+                // but you can call any function here.
+                loadJobsList();
+                loading = true;
+            }
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+        }
     }
 }

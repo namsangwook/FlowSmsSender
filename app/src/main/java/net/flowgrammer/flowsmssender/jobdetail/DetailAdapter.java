@@ -10,6 +10,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import net.flowgrammer.flowsmssender.R;
+import net.flowgrammer.flowsmssender.util.Util;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -114,7 +115,7 @@ public class DetailAdapter extends BaseAdapter {
         holder.phonenumberTextView.setText(phonenumber);
         holder.stateTextView.setText(statusString);
 
-        convertView.setMinimumHeight(75);
+        convertView.setMinimumHeight((int) Util.convertDpToPixel(45, mContext));
         return convertView;
     }
 

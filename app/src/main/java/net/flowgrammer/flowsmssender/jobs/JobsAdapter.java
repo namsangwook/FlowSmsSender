@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import net.flowgrammer.flowsmssender.R;
+import net.flowgrammer.flowsmssender.util.Util;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,7 +31,12 @@ public class JobsAdapter extends BaseAdapter {
     }
 
     public void updateData(JSONArray jsonArray) {
-        mJsonArray = jsonArray;
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject object = jsonArray.optJSONObject(i);
+            mJsonArray.put(object);
+        }
+//        mJsonArray.put(jsonArray);
+//        mJsonArray = jsonArray;
         notifyDataSetChanged();
     }
 
@@ -79,7 +85,7 @@ public class JobsAdapter extends BaseAdapter {
         holder.titleTextView.setText(title);
         holder.dateTextView.setText(date);
 
-        convertView.setMinimumHeight(75);
+        convertView.setMinimumHeight((int) Util.convertDpToPixel(45, mContext));
 
         return convertView;
     }
