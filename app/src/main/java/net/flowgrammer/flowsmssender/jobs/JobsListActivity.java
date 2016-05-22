@@ -2,10 +2,14 @@ package net.flowgrammer.flowsmssender.jobs;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.AbsListView;
@@ -89,7 +93,8 @@ public class JobsListActivity extends AppCompatActivity {
             return;
         }
 
-        mCurrentPage++;
+//        mCurrentPage++;
+        int requestIndex = mCurrentPage + 1;
 
         mDialog.show();
 
@@ -100,7 +105,7 @@ public class JobsListActivity extends AppCompatActivity {
         RequestParams params = new RequestParams();
 //        params.put("session", mSetting.authKey());
 
-        String requestUrl = Const.QUERY_URL + "/jobs/page/" + mCurrentPage;
+        String requestUrl = Const.QUERY_URL + "/jobs/page/" + requestIndex;
 
         Log.e(LOG_TAG, requestUrl);
 
@@ -186,12 +191,9 @@ public class JobsListActivity extends AppCompatActivity {
                 if (totalItemCount > previousTotal) {
                     loading = false;
                     previousTotal = totalItemCount;
-//                    currentPage++;
                 }
             }
             if (!loading && loadMore) {
-                // I load the next page of gigs using a background task,
-                // but you can call any function here.
                 loadJobsList();
                 loading = true;
             }

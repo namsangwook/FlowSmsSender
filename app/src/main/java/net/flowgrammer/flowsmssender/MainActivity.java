@@ -19,6 +19,7 @@ import com.loopj.android.http.RequestParams;
 import net.flowgrammer.flowsmssender.jobs.JobsListActivity;
 import net.flowgrammer.flowsmssender.util.Const;
 import net.flowgrammer.flowsmssender.util.Setting;
+import net.flowgrammer.flowsmssender.util.SslAsyncHttpClient;
 
 import org.apache.http.Header;
 import org.json.JSONObject;
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_logout) {
             mDialog.show();
-            AsyncHttpClient client = new AsyncHttpClient();
+            AsyncHttpClient client = new SslAsyncHttpClient();
             client.addHeader("Cookie", "connect.sid=" + Setting.cookie(getApplicationContext()));
             client.addHeader("Accept", "application/json");
 
