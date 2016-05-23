@@ -12,6 +12,8 @@ import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -62,38 +64,60 @@ public class SmsIntentService extends IntentService {
         return super.onStartCommand(intent, flags, startId);
     }
 
+//    private void sendSms(String recipient, String smsBody, Integer seq) {
+//        SmsManager sms = SmsManager.getDefault();
+////        int displaySeq = seq + 1;
+////        smsBody += "\nseq : " + displaySeq;
+////        List<String> messages = sms.divideMessage(smsBody);
+////        int messageCount = messages.size();
+////        Log.e(LOG_TAG, "Message Count: " + messageCount);
+//
+////        mCurrentSeq = seq;
+////        sms.sendTextMessage(recipient, null, smsBody, sentPI, deliveredPI);
+////        for (String message : messages) {
+//////            Intent intent = new Intent(ACTION_SMS_SENT);
+//////            intent.putExtra("seq", seq);
+////            Log.e(LOG_TAG, "Send Message : " + message);
+////            mCurrentSeq = seq;
+////            PendingIntent sentPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_SENT), 0);
+//////            PendingIntent deliveredPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_DELIVERED), 0);
+//////
+//////            sms.sendTextMessage(recipient, null, message, sentPI, deliveredPI);
+////            sms.sendTextMessage(recipient, null, message, sentPI, null); // 일단 시간텀을 두고 sms 를 보내자
+////
+////            try {
+////                Thread.sleep(3 * 1000);
+////            } catch (InterruptedException e) {
+////                e.printStackTrace();
+////            }
+////        }
+//
+//        Log.e(LOG_TAG, "Send Message : " + smsBody);
+////        mCurrentSeq = seq;
+//        PendingIntent sentPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_SENT), 0);
+////            PendingIntent deliveredPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_DELIVERED), 0);
+//        sms.sendTextMessage(recipient, null, smsBody, sentPI, null); // 일단 시간텀을 두고 sms 를 보내자
+//    }
+
     private void sendSms(String recipient, String smsBody, Integer seq) {
-        SmsManager sms = SmsManager.getDefault();
+        SmsManager smsManager = SmsManager.getDefault();
 //        int displaySeq = seq + 1;
 //        smsBody += "\nseq : " + displaySeq;
-//        List<String> messages = sms.divideMessage(smsBody);
-//        int messageCount = messages.size();
-//        Log.e(LOG_TAG, "Message Count: " + messageCount);
+        ArrayList<String> messages = smsManager.divideMessage(smsBody);
+//        ArrayList<String> messages = smsManager.divideMessage("sldjflsdjflsjdflsjslkdjflsjdfljsdlkfjsldjflsjdfljsdlfjsldjflsdjflskjdflskjdflsjdflksjdflsjdlfkjsdlkfjsldkjfa;lkdslfjkasldjkfaljsdflajsdlfja;lsdjf;aldjsflajsdlfjalsdjflajsdflja;sldfjkal;jsdflajsdflajsdfljasldfjasldjflajsd;flajs;ldfjalkjsdflkajsdlfkjdlf");
 
-//        mCurrentSeq = seq;
-//        sms.sendTextMessage(recipient, null, smsBody, sentPI, deliveredPI);
-//        for (String message : messages) {
-////            Intent intent = new Intent(ACTION_SMS_SENT);
-////            intent.putExtra("seq", seq);
-//            Log.e(LOG_TAG, "Send Message : " + message);
-//            mCurrentSeq = seq;
-//            PendingIntent sentPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_SENT), 0);
-////            PendingIntent deliveredPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_DELIVERED), 0);
-////
-////            sms.sendTextMessage(recipient, null, message, sentPI, deliveredPI);
-//            sms.sendTextMessage(recipient, null, message, sentPI, null); // 일단 시간텀을 두고 sms 를 보내자
-//
-//            try {
-//                Thread.sleep(3 * 1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        int messageCount = messages.size();
+        Log.e(LOG_TAG, "Message Count: " + messageCount);
 
-        Log.e(LOG_TAG, "Send Message : " + smsBody);
-//        mCurrentSeq = seq;
-        PendingIntent sentPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_SENT), 0);
-//            PendingIntent deliveredPI = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(ACTION_SMS_DELIVERED), 0);
-        sms.sendTextMessage(recipient, null, smsBody, sentPI, null); // 일단 시간텀을 두고 sms 를 보내자
+        ArrayList<PendingIntent> sentIntents = new ArrayList<PendingIntent>();
+        for (int i = 0; i < messages.size(); i++) {
+            Intent intent = new Intent(ACTION_SMS_SENT);
+            intent.putExtra("total", messageCount);
+            intent.putExtra("seq", i + 1);
+            PendingIntent sentPI = PendingIntent.getBroadcast(getApplicationContext(), i, intent, PendingIntent.FLAG_ONE_SHOT);
+            sentIntents.add(sentPI);
+        }
+
+        smsManager.sendMultipartTextMessage(recipient, null, messages, sentIntents, null);
     }
 }

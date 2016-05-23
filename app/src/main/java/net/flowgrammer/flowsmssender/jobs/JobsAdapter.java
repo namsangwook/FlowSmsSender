@@ -30,6 +30,11 @@ public class JobsAdapter extends BaseAdapter {
         mJsonArray = new JSONArray();
     }
 
+    public void clear() {
+        mJsonArray = new JSONArray();
+        notifyDataSetChanged();
+    }
+
     public void updateData(JSONArray jsonArray) {
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject object = jsonArray.optJSONObject(i);

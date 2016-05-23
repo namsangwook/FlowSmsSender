@@ -11,9 +11,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -135,8 +138,9 @@ public class JobDetailActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String message = "unknown";
+                Integer total = intent.getIntExtra("total", '1');
                 Integer seq = intent.getIntExtra("seq", -1);
-                Log.e(LOG_TAG, "broadcast receive, seq : " + seq);
+                Log.e(LOG_TAG, "broadcast receive, total : " + total + ", seq : " + seq);
                 Log.e(LOG_TAG, "broadcast receive, current seq : " + mJobIndex);
                 Intent broadcastIntent = new Intent();
                 broadcastIntent.setAction("net.flowgrammer.intent.action.MESSAGE_PROCESSED");
@@ -144,15 +148,17 @@ public class JobDetailActivity extends AppCompatActivity {
                     case Activity.RESULT_OK:
                         message = "Message sent!";
                         Log.e(LOG_TAG, "send sms success");
-                        try {
-                            Thread.sleep(3000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        if (seq == total) {
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            broadcastIntent.putExtra("result", "success");
+                            broadcastIntent.putExtra("message", "success");
+                            broadcastIntent.putExtra("seq", mJobIndex);
+                            getBaseContext().sendBroadcast(broadcastIntent);
                         }
-                        broadcastIntent.putExtra("result", "success");
-                        broadcastIntent.putExtra("message", "success");
-                        broadcastIntent.putExtra("seq", mJobIndex);
-                        getBaseContext().sendBroadcast(broadcastIntent);
 
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
@@ -209,6 +215,29 @@ public class JobDetailActivity extends AppCompatActivity {
 //        registerReceiver(mDeliveredReceiver, new IntentFilter(ACTION_SMS_DELIVERED));
 
         loadJobDetail();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_detail, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_reload) {
+            loadJobDetail();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     /**

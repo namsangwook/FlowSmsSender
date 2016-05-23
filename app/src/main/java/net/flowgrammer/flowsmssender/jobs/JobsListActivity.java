@@ -11,6 +11,8 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -53,21 +55,21 @@ public class JobsListActivity extends AppCompatActivity {
     JobsAdapter mJobsAdapter;
     Integer mTotalPage = 1;
     Integer mTotalCount = 0;
-    Integer mCurrentPage;
+    Integer mCurrentPage = 0;
     Integer mItemPerPage;
 
     ProgressDialog mDialog;
+    ListView mlistView;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_jobs);
 
-        mCurrentPage = 0;
-
-        ListView listView = (ListView)findViewById(R.id.listview);
+        mlistView = (ListView)findViewById(R.id.listview);
         mJobsAdapter = new JobsAdapter(this, getLayoutInflater());
-        listView.setAdapter(mJobsAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mlistView.setAdapter(mJobsAdapter);
+        mlistView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 JSONObject jsonObject = (JSONObject) mJobsAdapter.getItem(position);
@@ -78,12 +80,41 @@ public class JobsListActivity extends AppCompatActivity {
             }
         });
 
-        listView.setOnScrollListener(new EndlessScrollListener());
+        mlistView.setOnScrollListener(new EndlessScrollListener());
         mDialog = new ProgressDialog(this);
         mDialog.setMessage("Loading...");
         mDialog.setCancelable(true);
 
         loadJobsList();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_detail, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_reload) {
+            mTotalPage = 1;
+            mTotalCount = 0;
+            mCurrentPage = 0;
+            mJobsAdapter.clear();
+
+//            mJobsAdapter.clear();
+            loadJobsList();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void loadJobsList() {
@@ -123,7 +154,7 @@ public class JobsListActivity extends AppCompatActivity {
                     startActivityForResult(intent, 1);
                     return;
                 }
-                JSONArray list = response.optJSONArray("jobs");
+                final JSONArray list = response.optJSONArray("jobs");
                 mTotalCount = Integer.valueOf(response.optString("totalJobCount"));
                 mCurrentPage = Integer.valueOf(response.optString("currentPage"));
                 mItemPerPage = Integer.valueOf(response.optString("itemPerPage"));
@@ -137,7 +168,12 @@ public class JobsListActivity extends AppCompatActivity {
 //                if (result.equalsIgnoreCase("success")) {
 //                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
 //                }
-                mJobsAdapter.updateData(list);
+                mlistView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mJobsAdapter.updateData(list);
+                    }
+                }, 300);
             }
 
             @Override
@@ -180,16 +216,21 @@ public class JobsListActivity extends AppCompatActivity {
         @Override
         public void onScroll(AbsListView view, int firstVisibleItem,
                              int visibleItemCount, int totalItemCount) {
+            Log.e(LOG_TAG, "onScroll, totalItemCount : " + totalItemCount + ", mTotalCount : " + mTotalCount);
+
             if (totalItemCount >= mTotalCount) {
+                Log.e(LOG_TAG, "totalItemCount : " + totalItemCount + " is greater or equals to mTotalCount : " + mTotalCount);
                 return;
             }
 
             boolean loadMore = /* maybe add a padding */
                     firstVisibleItem + visibleItemCount >= totalItemCount;
 
+            Log.e(LOG_TAG, "loadMore : " + loadMore + ", isLoading : " + loading);
+
             if (loading) {
+                loading = false;
                 if (totalItemCount > previousTotal) {
-                    loading = false;
                     previousTotal = totalItemCount;
                 }
             }

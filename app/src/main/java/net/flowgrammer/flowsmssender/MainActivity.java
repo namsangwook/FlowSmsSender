@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                     mDialog.dismiss();
                     super.onFailure(statusCode, e, errorResponse);
-                    Toast.makeText(getApplicationContext(), errorResponse == null ? "" : errorResponse.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
 
                 }
             });
