@@ -86,3 +86,4 @@ public class SmsIntentService extends IntentService {
         smsManager.sendMultipartTextMessage(recipient, null, messages, sentIntents, null);
     }
 }
+
