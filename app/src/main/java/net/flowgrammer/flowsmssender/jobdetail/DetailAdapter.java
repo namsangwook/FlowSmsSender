@@ -72,20 +72,15 @@ public class DetailAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
 
-        // check if the view already exists
-        // if so, no need to inflate and findViewById again!
         if (convertView == null) {
 
-            // Inflate the custom row layout from your XML.
             convertView = mInflater.inflate(R.layout.row_job_detail, null);
 
-            // create a new "Holder" with subviews
             holder = new ViewHolder();
             holder.nameTextView = (TextView) convertView.findViewById(R.id.text_name);
             holder.phonenumberTextView = (TextView) convertView.findViewById(R.id.text_phonenumber);
             holder.stateTextView = (TextView) convertView.findViewById(R.id.text_state);
 
-            // hang onto this holder for future recyclage
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();

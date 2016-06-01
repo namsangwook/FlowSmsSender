@@ -40,8 +40,6 @@ public class JobsAdapter extends BaseAdapter {
             JSONObject object = jsonArray.optJSONObject(i);
             mJsonArray.put(object);
         }
-//        mJsonArray.put(jsonArray);
-//        mJsonArray = jsonArray;
         notifyDataSetChanged();
     }
 
@@ -64,19 +62,14 @@ public class JobsAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
 
-        // check if the view already exists
-        // if so, no need to inflate and findViewById again!
         if (convertView == null) {
 
-            // Inflate the custom row layout from your XML.
             convertView = mInflater.inflate(R.layout.row_job, null);
 
-            // create a new "Holder" with subviews
             holder = new ViewHolder();
             holder.titleTextView = (TextView) convertView.findViewById(R.id.text_title);
             holder.dateTextView = (TextView) convertView.findViewById(R.id.text_date);
 
-            // hang onto this holder for future recyclage
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();

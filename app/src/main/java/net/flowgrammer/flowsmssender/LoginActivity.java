@@ -31,13 +31,10 @@ public class LoginActivity extends AppCompatActivity {
 
     ProgressDialog mDialog;
 
-    //    Setting mSetting;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
-//        mSetting = new Setting(this);
 
         mDialog = new ProgressDialog(this);
         mDialog.setMessage("Loading...");
@@ -74,11 +71,7 @@ public class LoginActivity extends AppCompatActivity {
                 Log.d("TEST", "success");
                 Log.d("TEST", response.toString());
                 String result = response.optString("result");
-//                String sessionId = response.optString("session_id");
-//                mSetting.setAuthKey(sessionId);
                 if (result.equalsIgnoreCase("success")) {
-//                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
-//                    finishActivity(0);
                     setResult(Activity.RESULT_OK);
                     finish();
                 }
@@ -89,8 +82,6 @@ public class LoginActivity extends AppCompatActivity {
                     }
                     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
                 }
-//                        Log.d("TEST", response.toString());
-//                        super.onSuccess(response);
             }
 
             @Override

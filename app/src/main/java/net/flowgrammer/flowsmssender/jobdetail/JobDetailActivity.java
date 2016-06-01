@@ -182,7 +182,6 @@ public class JobDetailActivity extends AppCompatActivity {
         };
         registerReceiver(mReceiver, new IntentFilter(ACTION_SMS_SENT));
 
-
 //        mDeliveredReceiver = new BroadcastReceiver() {
 //            @Override
 //            public void onReceive(Context context, Intent broadcastIntent) {
@@ -226,12 +225,8 @@ public class JobDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_reload) {
             loadJobDetail();
             return true;
@@ -240,9 +235,6 @@ public class JobDetailActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * Hides the soft keyboard
-     */
     public void hideSoftKeyboard() {
         if(getCurrentFocus()!=null) {
             InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -250,9 +242,6 @@ public class JobDetailActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Shows the soft keyboard
-     */
     public void showSoftKeyboard(View view) {
         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         view.requestFocus();
@@ -312,7 +301,6 @@ public class JobDetailActivity extends AppCompatActivity {
                 String result = response.optString("result");
                 if (!result.equalsIgnoreCase("success")) {
                     String message = response.optString("message");
-//                    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
                 } else {
                     if (status.equalsIgnoreCase("success")) {
                         mDetailAdapter.updateStatus(position, 1);
@@ -339,7 +327,6 @@ public class JobDetailActivity extends AppCompatActivity {
                     }
                     sendNextSms();
                 }
-
             }
         });
     }

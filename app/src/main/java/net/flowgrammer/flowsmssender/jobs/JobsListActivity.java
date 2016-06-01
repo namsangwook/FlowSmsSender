@@ -97,19 +97,14 @@ public class JobsListActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_reload) {
             mTotalPage = 1;
             mTotalCount = 0;
             mCurrentPage = 0;
             mJobsAdapter.clear();
 
-//            mJobsAdapter.clear();
             loadJobsList();
             return true;
         }
@@ -118,13 +113,11 @@ public class JobsListActivity extends AppCompatActivity {
     }
 
     private void loadJobsList() {
-
         if (mCurrentPage >= mTotalPage) {
             Log.e(LOG_TAG, "no more page to return, return!!!!");
             return;
         }
 
-//        mCurrentPage++;
         int requestIndex = mCurrentPage + 1;
 
         mDialog.show();
@@ -134,7 +127,6 @@ public class JobsListActivity extends AppCompatActivity {
         client.addHeader("Accept", "application/json");
 
         RequestParams params = new RequestParams();
-//        params.put("session", mSetting.authKey());
 
         String requestUrl = Const.QUERY_URL + "/jobs/page/" + requestIndex;
 
@@ -164,10 +156,6 @@ public class JobsListActivity extends AppCompatActivity {
                         + ", itemPerPage ; " + mItemPerPage
                         + ", totalPage ; " + mTotalPage
                 );
-//                Log.d(LOG_TAG, list.toString());
-//                if (result.equalsIgnoreCase("success")) {
-//                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_LONG).show();
-//                }
                 mlistView.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -179,7 +167,6 @@ public class JobsListActivity extends AppCompatActivity {
             @Override
             public void onFailure(int statusCode, Throwable e, JSONObject errorResponse) {
                 mDialog.dismiss();
-//                super.onFailure(statusCode, e, errorResponse);
                 Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
                 finish();
 
@@ -201,7 +188,6 @@ public class JobsListActivity extends AppCompatActivity {
     }
 
     private class EndlessScrollListener implements AbsListView.OnScrollListener {
-
         private int visibleThreshold = 5;
         private int currentPage = 0;
         private int previousTotal = 0;
