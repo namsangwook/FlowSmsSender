@@ -402,6 +402,9 @@ public class JobDetailActivity extends AppCompatActivity {
             if (status > 0) {
                 continue;
             }
+            if (status == -2) {
+                continue;
+            }
             synchronized (lock) {
                 mJobIndex = i;
             }

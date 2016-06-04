@@ -15,6 +15,12 @@ import net.flowgrammer.flowsmssender.util.Util;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
 /**
  * Created by neox on 5/17/16.
  */
@@ -79,6 +85,9 @@ public class JobsAdapter extends BaseAdapter {
 
         String title = jsonObject.optString("name");
         String date = jsonObject.optString("created");
+        date = getDateStringFromGMT(date);
+
+
 
         holder.titleTextView.setText(title);
         holder.dateTextView.setText(date);
@@ -86,6 +95,22 @@ public class JobsAdapter extends BaseAdapter {
         convertView.setMinimumHeight((int) Util.convertDpToPixel(45, mContext));
 
         return convertView;
+    }
+
+    private String getDateStringFromGMT(String inputText) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss");
+        SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy");
+
+        Date date = null;
+        try {
+            date = inputFormat.parse(inputText);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return inputText;
+        }
+        String outputText = outputFormat.format(date);
+        return outputText;
     }
 
     private static class ViewHolder {

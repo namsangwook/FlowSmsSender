@@ -101,9 +101,15 @@ public class DetailAdapter extends BaseAdapter {
         String statusString = "";
         if (status > 0) {
             statusString = "success";
+            convertView.setBackgroundColor(mContext.getResources().getColor(R.color.colorSuccess));
         }
-        else if (status < 0) {
+        else if (status == -1) {
             statusString = "fail";
+            convertView.setBackgroundColor(mContext.getResources().getColor(R.color.colorFail));
+        }
+        else if (status == -2) {
+            statusString = "invalid";
+            convertView.setBackgroundColor(mContext.getResources().getColor(R.color.colorFail));
         }
 
         holder.nameTextView.setText(name);

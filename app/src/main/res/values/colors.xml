@@ -6,4 +6,6 @@
     <color name="red">#ffff0000</color>
     <color name="yelloiw">#FFFFFF00</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="colorFail">#F2DEDE</color>
+    <color name="colorSuccess">#d9edf7</color>
 </resources>
