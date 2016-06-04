@@ -83,7 +83,17 @@ public class SmsIntentService extends IntentService {
             sentIntents.add(sentPI);
         }
 
-        smsManager.sendMultipartTextMessage(recipient, null, messages, sentIntents, null);
+        try {
+            smsManager.sendMultipartTextMessage(recipient, null, messages, sentIntents, null);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Intent broadcastIntent = new Intent();
+            broadcastIntent.setAction("net.flowgrammer.intent.action.MESSAGE_PROCESSED");
+            broadcastIntent.putExtra("result", "fail");
+            broadcastIntent.putExtra("message", ex.getMessage());
+            broadcastIntent.putExtra("seq", seq);
+            getBaseContext().sendBroadcast(broadcastIntent);
+        }
     }
 }
 
